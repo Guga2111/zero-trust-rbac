@@ -1,0 +1,948 @@
+{
+  "info": {
+    "name": "Zero Trust RBAC Seminary",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "access_token", "value": "" },
+    { "key": "dpop_private_key", "value": "" },
+    { "key": "dpop_public_key", "value": "" },
+    { "key": "base_url", "value": "http://localhost:8081" },
+    { "key": "keycloak_url", "value": "http://localhost:8080" }
+  ],
+  "item": [
+    {
+      "name": "0 - Login",
+      "item": [
+        {
+          "name": "Login MANAGER (maria)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let keypair = KEYUTIL.generateKeypair('RSA', 2048);",
+                  "",
+                  "      pm.collectionVariables.set('dpop_private_key', JSON.stringify(KEYUTIL.getJWKFromKey(keypair.prvKeyObj)));",
+                  "      pm.collectionVariables.set('dpop_public_key', JSON.stringify(KEYUTIL.getJWKFromKey(keypair.pubKeyObj)));",
+                  "",
+                  "      let jwk = KEYUTIL.getJWKFromKey(keypair.pubKeyObj);",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: jwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000)",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), keypair.prvKeyObj);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if(jsonData.access_token) {",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "}",
+                  "",
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData.access_token).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "client_id", "value": "api-client" },
+                { "key": "grant_type", "value": "password" },
+                { "key": "username", "value": "maria" },
+                { "key": "password", "value": "123" }
+              ]
+            },
+            "url": "{{keycloak_url}}/realms/zerotrust/protocol/openid-connect/token"
+          }
+        },
+        {
+          "name": "Login READER (change username here)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let keypair = KEYUTIL.generateKeypair('RSA', 2048);",
+                  "",
+                  "      pm.collectionVariables.set('dpop_private_key', JSON.stringify(KEYUTIL.getJWKFromKey(keypair.prvKeyObj)));",
+                  "      pm.collectionVariables.set('dpop_public_key', JSON.stringify(KEYUTIL.getJWKFromKey(keypair.pubKeyObj)));",
+                  "",
+                  "      let jwk = KEYUTIL.getJWKFromKey(keypair.pubKeyObj);",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: jwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000)",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), keypair.prvKeyObj);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if(jsonData.access_token) {",
+                  "    pm.collectionVariables.set('access_token', jsonData.access_token);",
+                  "}",
+                  "",
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.expect(jsonData.access_token).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                { "key": "client_id", "value": "api-client" },
+                { "key": "grant_type", "value": "password" },
+                { "key": "username", "value": "CHANGE_TO_READER_USERNAME" },
+                { "key": "password", "value": "CHANGE_TO_READER_PASSWORD" }
+              ]
+            },
+            "url": "{{keycloak_url}}/realms/zerotrust/protocol/openid-connect/token"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1 - RBAC Tests",
+      "item": [
+        {
+          "name": "1.1 READER - GET documents (200 OK)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('READER can list documents', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "1.2 READER - POST documents (403 Forbidden)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('READER cannot create documents', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "1.3 READER - DELETE documents (403 Forbidden)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('READER cannot delete documents', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents/1"
+          }
+        },
+        {
+          "name": "1.4 MANAGER - GET documents (200 OK)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('MANAGER can list documents', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "1.5 MANAGER - POST documents (200 OK)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('MANAGER can create documents', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "1.6 MANAGER - DELETE documents (200 OK)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('MANAGER can delete documents', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents/1"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2 - DPoP Tests (Token Binding)",
+      "item": [
+        {
+          "name": "2.1 Missing DPoP header (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected without DPoP proof header', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "2.2 Stolen token - wrong key pair (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Simulates an attacker who stole the access_token but generates their own key pair",
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      // ATTACKER generates a NEW key pair (different from the one bound to the token)",
+                  "      let attackerKeypair = KEYUTIL.generateKeypair('RSA', 2048);",
+                  "      let attackerPubJwk = KEYUTIL.getJWKFromKey(attackerKeypair.pubKeyObj);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: attackerPubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), attackerKeypair.prvKeyObj);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Stolen token rejected - JKT mismatch', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "2.3 Missing ath claim (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      // Deliberately omitting ath claim",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000)",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected without ath claim', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "2.4 Wrong ath - replay attack (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      // Fake ath - simulates replaying a proof meant for a different token",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: 'fake_ath_value_simulating_replay_attack_12345'",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Replay attack rejected - ath mismatch', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "2.5 Bearer scheme instead of DPoP (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Bearer scheme rejected for DPoP token', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3 - Device Compliance Tests",
+      "item": [
+        {
+          "name": "3.1 Compliant device - POST (200 OK)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Login first as MANAGER with device_compliant=true in Keycloak",
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Compliant device can create documents', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "3.2 Non-compliant device - POST (403)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// NOTE: For this test, set device_compliant=false in Keycloak for the user,",
+                  "// then re-login before running this request.",
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let athHash = KJUR.crypto.Util.hashString(accessToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let payload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(payload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Non-compliant device blocked by Zero Trust', function () {",
+                  "    pm.response.to.have.status(403);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{access_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4 - Authentication Tests",
+      "item": [
+        {
+          "name": "4.1 No token at all (401)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Request without token is rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/api/documents"
+          }
+        },
+        {
+          "name": "4.2 Tampered token (401)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.sendRequest('https://cdnjs.cloudflare.com/ajax/libs/jsrsasign/10.9.0/jsrsasign-all-min.js',",
+                  "  (err, res) => {",
+                  "      let navigator = {};",
+                  "      let window = {};",
+                  "      eval(res.text());",
+                  "",
+                  "      let prvJwk = JSON.parse(pm.collectionVariables.get('dpop_private_key'));",
+                  "      let pubJwk = JSON.parse(pm.collectionVariables.get('dpop_public_key'));",
+                  "      let privateKey = KEYUTIL.getKey(prvJwk);",
+                  "",
+                  "      // Tamper with the access token (flip a character in the payload)",
+                  "      let accessToken = pm.collectionVariables.get('access_token');",
+                  "      let parts = accessToken.split('.');",
+                  "      let payload = parts[1];",
+                  "      let tampered = payload.substring(0, 10) + 'XXXX' + payload.substring(14);",
+                  "      let tamperedToken = parts[0] + '.' + tampered + '.' + parts[2];",
+                  "      pm.variables.set('tampered_token', tamperedToken);",
+                  "",
+                  "      // Generate valid DPoP proof but for the tampered token",
+                  "      let athHash = KJUR.crypto.Util.hashString(tamperedToken, 'sha256');",
+                  "      let ath = hextob64u(athHash);",
+                  "",
+                  "      let header = { alg: 'RS256', typ: 'dpop+jwt', jwk: pubJwk };",
+                  "      let dpopPayload = {",
+                  "          jti: pm.variables.replaceIn('{{$guid}}'),",
+                  "          htm: pm.request.method,",
+                  "          htu: pm.variables.replaceIn(pm.request.url.toString()).split('?')[0],",
+                  "          iat: Math.floor(Date.now() / 1000),",
+                  "          ath: ath",
+                  "      };",
+                  "",
+                  "      let dpopProof = KJUR.jws.JWS.sign('RS256', JSON.stringify(header), JSON.stringify(dpopPayload), privateKey);",
+                  "      pm.variables.set('dpop_proof', dpopProof);",
+                  "  });"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Tampered token is rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "DPoP", "value": "{{dpop_proof}}" },
+              { "key": "Authorization", "value": "DPoP {{tampered_token}}" }
+            ],
+            "url": "{{base_url}}/api/documents"
+          }
+        }
+      ]
+    }
+  ]
+}
