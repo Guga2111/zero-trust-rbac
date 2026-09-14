@@ -1,0 +1,28 @@
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: keycloak-seminario
+    command: start-dev
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+    ports:
+      - "8080:8080"
+    networks:
+      - zerotrust-net
+
+  api:
+    build: . 
+    container_name: api-zerotrust
+    ports:
+      - "8081:8080"
+    environment:
+      - SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI=http://keycloak:8080/realms/seminario
+    depends_on:
+      - keycloak
+    networks:
+      - zerotrust-net
+
+networks:
+  zerotrust-net:
+    driver: bridge
