@@ -1,10 +1,17 @@
-spring.application.name=rbac
-server:
-  port: 8081
-
 spring:
+  application:
+    name: rbac
   security:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://localhost:8080/realms/zerotrust
+          jwk-set-uri: http://keycloak:8080/realms/zerotrust/protocol/openid-connect/certs
+
+server:
+  port: 8081
+
+logging:
+  level:
+    org.springframework.security.web.FilterChainProxy: TRACE
+    org.springframework.security: TRACE
+    com.zerotrust.rbac: DEBUG
