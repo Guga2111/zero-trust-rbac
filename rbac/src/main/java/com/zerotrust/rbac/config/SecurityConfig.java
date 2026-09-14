@@ -10,9 +10,11 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -31,11 +33,26 @@ public class SecurityConfig {
                 .anyRequest().authenticated() // any request only pass if the token is valid
             )
             .oauth2ResourceServer(oauth2 -> oauth2
+                .bearerTokenResolver(bearerTokenResolver())
                 .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
             )
-            .addFilterAfter(new AuditSecurityFilter(), BearerTokenAuthenticationFilter.class);
+            .addFilterAfter(new DPopValidationFilter(), BearerTokenAuthenticationFilter.class)
+            .addFilterAfter(new AuditSecurityFilter(), DPopValidationFilter.class);
         return http.build();
   }
+
+  @Bean
+    public BearerTokenResolver bearerTokenResolver() {
+        return request -> {
+            String header = request.getHeader("Authorization");
+            if (header != null && header.startsWith("DPoP ")) {
+                return header.substring(5); // Remove "DPoP " and return the token
+            } else if (header != null && header.startsWith("Bearer ")) {
+                return header.substring(7);
+            }
+            return null;
+        };
+    }
 
   @Bean
   public JwtAuthenticationConverter jwtAuthenticationConverter() {
